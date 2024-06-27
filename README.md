@@ -13,3 +13,4 @@ Once you set the amount of pushups you'd like to do, it gives you fives seconds 
 * Fractal Bootcamp's Intro to Code
 * VSCode
 * GitHub Pages
+* DALLE
