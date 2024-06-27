@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pushup Workout</title>
+    <style>
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .container {
+            width: 100%;
+            max-width: 400px;
+            background-color: #2c2c2c;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            color: #ff4757;
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+        }
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: #dfe6e9;
+        }
+        input {
+            width: 100%;
+            padding: 0.75rem;
+            font-size: 1.1rem;
+            border: none;
+            background-color: #3d3d3d;
+            color: #ffffff;
+            border-radius: 10px;
+        }
+        button {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1.2rem;
+            background-color: #ff4757;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.1s;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #ff6b6b;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        #status {
+            margin-top: 1.5rem;
+            font-size: 1.2rem;
+            color: #dfe6e9;
+            text-align: center;
+        }
+        #counter {
+            font-size: 4rem;
+            font-weight: bold;
+            color: #ff4757;
+            margin-top: 1rem;
+            text-align: center;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background-color: #3d3d3d;
+            border-radius: 5px;
+            margin-top: 1rem;
+            overflow: hidden;
+        }
+        .progress {
+            width: 0%;
+            height: 100%;
+            background-color: #ff4757;
+            transition: width 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Pushup Challenge</h1>
+        <div class="input-group">
+            <label for="pushupCount">Set Your Goal</label>
+            <input type="number" id="pushupCount" placeholder="Number of pushups" min="1">
+        </div>
+        <button id="beginButton">Start Workout</button>
+        <div id="status">Ready to begin your workout</div>
+        <div id="counter">0</div>
+        <div class="progress-bar">
+            <div class="progress" id="progress"></div>
+        </div>
+    </div>
+
+    <script>
+        const pushupCount = document.getElementById('pushupCount');
+        const beginButton = document.getElementById('beginButton');
+        const status = document.getElementById('status');
+        const counter = document.getElementById('counter');
+        const progress = document.getElementById('progress');
+        const synth = window.speechSynthesis;
+        let maleVoice = null;
+
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                let voices = synth.getVoices();
+                maleVoice = voices.find(voice => voice.name.includes('Male') || voice.name.includes('man'));
+                if (!maleVoice) {
+                    maleVoice = voices[0];
+                }
+            }, 100);
+        });
+
+        beginButton.addEventListener('click', startWorkout);
+
+        function startWorkout() {
+            const count = parseInt(pushupCount.value);
+            if (isNaN(count) || count < 1) {
+                alert('Please enter a valid number of pushups.');
+                return;
+            }
+
+            beginButton.disabled = true;
+            status.textContent = 'Preparing to start...';
+            counter.textContent = '0';
+            progress.style.width = '0%';
+
+            let countdown = 5;
+
+            function countDown() {
+                if (countdown > 0) {
+                    speak(countdown.toString());
+                    status.textContent = `Starting in ${countdown}...`;
+                    countdown--;
+                    setTimeout(countDown, 1000);
+                } else {
+                    doPushups(count, 1);
+                }
+            }
+
+            countDown();
+        }
+
+        function doPushups(total, current) {
+            const phases = [
+                { name: 'down', count: ['one', 'two'] },
+                { name: 'bottom', count: ['one', 'two'] },
+                { name: 'up', count: ['one', 'two'] },
+                { name: 'top', count: ['one', 'two'] }
+            ];
+            
+            let phaseIndex = 0;
+
+            function doPhase() {
+                if (current <= total) {
+                    const phase = phases[phaseIndex];
+                    status.textContent = `Pushup ${current}: ${phase.name}`;
+                    
+                    speak(phase.count[0]);
+                    setTimeout(() => speak(phase.count[1]), 1000);
+                    
+                    phaseIndex++;
+                    if (phaseIndex >= phases.length) {
+                        phaseIndex = 0;
+                        counter.textContent = current;
+                        progress.style.width = `${(current / total) * 100}%`;
+                        current++;
+                    }
+                    setTimeout(doPhase, 2000);
+                } else {
+                    const totalTime = total * 8;
+                    const finalMessage = `${total} pushups completed. Workout duration: ${totalTime} seconds.`;
+                    speak(finalMessage);
+                    status.textContent = finalMessage;
+                    beginButton.disabled = false;
+                }
+            }
+
+            doPhase();
+        }
+
+        function speak(text) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            if (maleVoice) {
+                utterance.voice = maleVoice;
+            }
+            synth.speak(utterance);
+        }
+    </script>
+</body>
+</html>
